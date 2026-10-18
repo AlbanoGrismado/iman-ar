@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Imán con RA</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- Librería MindAR para A-Frame -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        /* Estilo opcional para un mensaje inicial */
+        #instruccion {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); color: white; padding: 10px 20px;
+            border-radius: 20px; font-size: 14px; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mensaje para el usuario -->
+    <div id="instruccion">Apunta la cámara a tu fotografía impresa</div>
+
+    <!-- Escena de A-Frame con MindAR -->
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true;" 
+             color-space="sRGB" 
+             renderer="colorManagement: true, physicallyCorrectLights" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: false">
+        
+        <!-- Cámara y luces (necesarias para A-Frame) -->
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity light="type: ambient; intensity: 0.8;"></a-entity>
+
+        <!-- El "target" es tu imagen. targetIndex: 0 se refiere al primer target en targets.mind -->
+        <a-entity mindar-image-target="targetIndex: 0">
+            <!-- 
+                Aquí colocamos el video. 
+                src: ruta a tu video.
+                position: lo centra sobre la imagen (ajusta si es necesario).
+                width/height: dimensiones del plano del video en relación al target.
+            -->
+            <a-video src="./video.mp4" 
+                     position="0 0 0" 
+                     height="1" 
+                     width="1.78" 
+                     rotation="0 0 0"
+                     play-on-click>
+            </a-video>
+            <!-- Nota: height=1 y width=1.78 son para un video 16:9. Ajusta según tu video. -->
+        </a-entity>
+    </a-scene>
+
+    <script>
+        // Este script es para asegurar la reproducción del video en navegadores móviles.
+        // La mayoría requiere una interacción del usuario (un toque) para iniciar el video.
+        const sceneEl = document.querySelector('a-scene');
+        sceneEl.addEventListener('renderstart', () => {
+            const videoEl = document.querySelector('a-video');
+            if (videoEl) {
+                // Intentamos reproducir, pero si el navegador lo bloquea, esperamos un clic.
+                videoEl.play().catch(e => {
+                    console.log("El video requiere interacción. Se reproducirá al tocar la pantalla.");
+                    document.body.addEventListener('click', () => {
+                        videoEl.play();
+                    }, { once: true });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
