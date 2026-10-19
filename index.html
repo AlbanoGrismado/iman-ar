@@ -12,11 +12,24 @@
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(0,0,0,0.7); color: white; padding: 10px 20px;
             border-radius: 20px; font-size: 14px; z-index: 1000;
+            text-align: center;
         }
+        #unmuteBtn {
+            position: absolute; top: 20px; right: 20px;
+            background: #ff5722; color: white; border: none;
+            padding: 12px 24px; border-radius: 30px;
+            font-size: 16px; font-weight: bold;
+            cursor: pointer; z-index: 1001;
+            display: none; /* Oculto hasta que se detecte la imagen */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        #unmuteBtn:active { background: #e64a19; }
     </style>
 </head>
 <body>
     <div id="instruccion">Apunta la cámara a tu fotografía impresa</div>
+    <!-- Botón para activar el sonido (aparece al detectar la imagen) -->
+    <button id="unmuteBtn">🔊 Activar sonido</button>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true;" 
              color-space="sRGB" 
@@ -24,13 +37,10 @@
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
         
-        <!-- 1. Precargamos el video en los assets de A-Frame -->
         <a-assets>
             <!-- 
-                Añadimos los atributos clave para navegadores móviles:
-                muted: permite el autoplay en algunos casos.
-                playsinline / webkit-playsinline: evita que el video se abra a pantalla completa en iOS.
-                preload="auto": indica al navegador que cargue el video.
+                El video sigue con muted="true" para permitir el autoplay.
+                Luego lo desilenciamos con JavaScript cuando el usuario toca el botón.
             -->
             <video id="miVideo" 
                    src="./video.mp4" 
@@ -45,7 +55,6 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
         <a-entity light="type: ambient; intensity: 0.8;"></a-entity>
 
-        <!-- 2. Le damos un ID al target para poder escuchar sus eventos -->
         <a-entity id="miTarget" mindar-image-target="targetIndex: 0">
             <a-video src="#miVideo" 
                      position="0 0 0" 
@@ -57,26 +66,39 @@
     </a-scene>
 
     <script>
-        // 3. Este script controla la reproducción del video
         const targetEl = document.getElementById('miTarget');
         const videoEl = document.getElementById('miVideo');
+        const unmuteBtn = document.getElementById('unmuteBtn');
+        const instruccion = document.getElementById('instruccion');
 
-        // Cuando MindAR detecta la imagen, reproduce el video.
+        // Al detectar la imagen, reproducimos el video (silenciado) y mostramos el botón.
         targetEl.addEventListener('targetFound', () => {
-            console.log('¡Imagen detectada! Reproduciendo video...');
+            console.log('Imagen detectada. Reproduciendo video en silencio...');
             videoEl.play().catch(error => {
                 console.error("Error al reproducir el video:", error);
-                // Si la reproducción falla, mostramos la instrucción de tocar la pantalla.
-                document.getElementById('instruccion').innerText = "Toca la pantalla para reproducir";
+                instruccion.innerText = "Toca la pantalla para reproducir";
                 document.body.addEventListener('click', () => videoEl.play(), { once: true });
             });
+            // Mostramos el botón para activar el sonido
+            unmuteBtn.style.display = 'block';
+            instruccion.innerText = "Toca 'Activar sonido' para escuchar";
         });
 
-        // Cuando MindAR pierde la imagen, pausa el video y lo reinicia.
+        // Al perder la imagen, pausamos y reiniciamos.
         targetEl.addEventListener('targetLost', () => {
             console.log('Imagen perdida. Pausando video.');
             videoEl.pause();
-            videoEl.currentTime = 0; // Opcional: reinicia el video al principio
+            videoEl.currentTime = 0;
+            unmuteBtn.style.display = 'none'; // Ocultamos el botón
+            instruccion.innerText = "Apunta la cámara a tu fotografía impresa";
+        });
+
+        // Evento del botón para activar el sonido.
+        unmuteBtn.addEventListener('click', () => {
+            videoEl.muted = false;
+            videoEl.volume = 1.0;
+            unmuteBtn.style.display = 'none';
+            instruccion.innerText = "¡Disfruta tu recuerdo!";
         });
     </script>
 </body>
